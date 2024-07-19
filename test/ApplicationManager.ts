@@ -324,4 +324,24 @@ describe("ApplicationManager", () => {
 			expect(returnedApps.length).to.equal(0);
 		});
 	});
+
+	describe("getNextApplicationId", () => {
+        let contract: any;
+
+        beforeEach(async () => {
+            const fixture = await loadFixture(deploy);
+            contract = fixture.contract;
+        });
+
+        it("Should return the next application ID", async () => {
+            expect(await contract.read.getNextApplicationId()).to.equal(parseUnits("0", 0));
+
+            const app = {
+                name: "app",
+                account: generateRandomAddress() as Address,
+            };
+            await contract.write.createApplication([app]);
+            expect(await contract.read.getNextApplicationId()).to.equal(parseUnits("1", 0));
+        });
+    });
 });
