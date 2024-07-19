@@ -1,7 +1,11 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
 import hre from "hardhat";
-import { type Address, getAddress, parseUnits } from "viem";
+import { type Address, getAddress, parseUnits, } from "viem";
+import { generatePrivateKey,privateKeyToAccount } from 'viem/accounts'
+ 
+const privateKey = generatePrivateKey()
+
 
 interface Application {
 	name: string;
@@ -43,18 +47,17 @@ describe("ApplicationManager", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		let contract: any;
 		let app: Application;
-
+		let account= privateKeyToAccount(generatePrivateKey()).address
 		beforeEach(async () => {
 			const fixture = await loadFixture(deploy);
 			contract = fixture.contract;
-
 			app = {
 				name: "app",
-				account: getAddress(fixture.app1Account.account.address),
+				account,
 			};
 		});
 
-		it("Should accept name (string) and account (address) as inputs", async () => {
+		it("Should accept Application as inputs", async () => {
 			expect(await contract.write.createApplication([app])).to.be.string;
 		});
 		it("Should increment nextApplicationId", async () => {
@@ -85,5 +88,65 @@ describe("ApplicationManager", () => {
 			expect(event.args.id).to.be.equal(applicationId);
 			expect(event.args.application).to.contain(app);
 		});
+		
+        it("Should revert if the account address is already used", async () => {
+            await contract.write.createApplication([app]);
+            await expect(contract.write.createApplication([app])).to.be.rejectedWith(
+                "Address already used for another application"
+            );
+        });
+	});
+
+	describe("updateApplication", () => {
+		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		let contract: any;
+		let app: Application;
+		let applicationId: string;
+		let account= privateKeyToAccount(generatePrivateKey()).address
+
+		beforeEach(async () => {
+			const fixture = await loadFixture(deploy);
+			contract = fixture.contract;
+
+			app = {
+				name: "app",
+				account,
+			};
+
+			applicationId = await contract.read.getNextApplicationId();
+			await contract.write.createApplication([app]);
+		});
+
+		it("Should accept Application as inputs", async () => {
+			expect(await contract.write.updateApplication([applicationId, app])).to.be
+				.string;
+		});
+		it("Should update the Application struct in the applications mapping with the provided applicationId to have the application data", async () => {
+			await contract.write.updateApplication([
+				applicationId,
+				{ account: app.account, name: "new app name" },
+			]);
+			expect(await contract.read.getApplication([applicationId])).to.contain({
+				account: app.account,
+				name: "new app name",
+			});
+		});
+		it("Should revert if the account address is already used", async () => {
+			const t1 = await contract.read.getNextApplicationId();
+			expect(t1).to.equal(parseUnits("1", 0));
+			await contract.write.createApplication([{		
+				account: privateKeyToAccount(generatePrivateKey()).address,
+				name: "new app"
+			}]);
+
+			await expect(contract.write.updateApplication([t1, app])).to.be.rejectedWith(
+                "Address already used for another application"
+            );
+        });
+        it("Should revert if the application does not exist", async () => {
+			await expect(contract.write.updateApplication(["1", app])).to.be.rejectedWith(
+                "Application does not exist"
+            );
+        });
 	});
 });

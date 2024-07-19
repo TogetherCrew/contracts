@@ -5,27 +5,44 @@ import {IApplicationManager} from "./IApplicationManager.sol";
 
 contract ApplicationManager is IApplicationManager {
     mapping(uint => Application) private applications;
+    mapping(address => bool) private addressUsed;
     uint private nextApplicationId;
 
     constructor() {}
 
-    function getNextApplicationId() external view returns (uint) {
+    function applicationExists(uint id) internal view returns (bool) {
+        return applications[id].account != address(0);
+    }
+    function getNextApplicationId() external view override returns (uint) {
         return nextApplicationId;
     }
 
-    function createApplication(Application memory application) external {
+    function createApplication(Application memory application) external override {
+        require(!addressUsed[application.account], "Address already used for another application");
         applications[nextApplicationId] = application;
+        addressUsed[application.account] = true;
         emit ApplicationCreated(nextApplicationId, applications[nextApplicationId]);
         nextApplicationId++;
     }
 
-    function updateApplication(uint id, Application memory application) external override {}
+    function updateApplication(uint id, Application memory application) external override {
+        require(applicationExists(id), "Application does not exist");
+        require(!addressUsed[application.account] || applications[id].account == application.account,
+            "Address already used for another application");
+        applications[id] = application;
+        emit ApplicationUpdated(id, applications[id]);
+    }
 
-    function deleteApplication(uint id) external override {}
+    function deleteApplication(uint id) external override {
+    }
 
-    function getApplication(uint id) external view returns (Application memory) {
+    function getApplication(uint id) external view override returns (Application memory) {
+        require(applicationExists(id), "Application does not exist");
         return applications[id];
     }
 
-    function getApplications(uint start, uint limit) external override returns (Application[] memory application) {}
+    function getApplications(uint start, uint limit) external view override returns (Application[] memory) {
+    }
+
+
 }
