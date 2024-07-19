@@ -27,6 +27,7 @@
 		"compile": "npx hardhat compile",
 		"check": "npx hardhat check",
 		"test": "npx hardhat test",
+		"coverage": "npx hardhat coverage",
 		"ci": "npx biome ci",
 		"format": "npx biome check --write"
 	}

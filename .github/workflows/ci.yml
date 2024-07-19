@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    name: CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the Repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Clean
+        run: yarn clean
+
+      - name: Compile
+        run: yarn compile
+
+      - name: Check
+        run: yarn check
+
+      - name: Test
+        run: yarn test
+
+      - name: CI
+        run: yarn ci
+
+      - name: Coverage
+        run: yarn coverage
