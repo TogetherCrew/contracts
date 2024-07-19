@@ -3,7 +3,7 @@ import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomiclabs/hardhat-solhint";
 
 const config: HardhatUserConfig = {
-	solidity: "0.8.24",
+	solidity: "0.8.25",
 };
 
 export default config;
