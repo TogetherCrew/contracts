@@ -4,8 +4,6 @@ import hre from "hardhat";
 import { type Address, getAddress, parseUnits, } from "viem";
 import { generatePrivateKey,privateKeyToAccount } from 'viem/accounts'
  
-const privateKey = generatePrivateKey()
-
 
 interface Application {
 	name: string;
@@ -34,6 +32,12 @@ describe("ApplicationManager", () => {
 		};
 	}
 
+	function generateRandomAddress(): string {
+        const randomKey = generatePrivateKey();
+        const account = privateKeyToAccount(randomKey);
+        return account.address;
+    }
+
 	describe("Deployment", () => {
 		it("Should set the nextxApplicationId to 0", async () => {
 			const { contract } = await loadFixture(deploy);
@@ -47,7 +51,7 @@ describe("ApplicationManager", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		let contract: any;
 		let app: Application;
-		let account= privateKeyToAccount(generatePrivateKey()).address
+		let account= generateRandomAddress() as Address;
 		beforeEach(async () => {
 			const fixture = await loadFixture(deploy);
 			contract = fixture.contract;
@@ -57,7 +61,7 @@ describe("ApplicationManager", () => {
 			};
 		});
 
-		it("Should accept Application as inputs", async () => {
+		it("Should accept Application as input", async () => {
 			expect(await contract.write.createApplication([app])).to.be.string;
 		});
 		it("Should increment nextApplicationId", async () => {
@@ -74,6 +78,12 @@ describe("ApplicationManager", () => {
 				app,
 			);
 		});
+        it("Should revert if the account address is already used", async () => {
+            await contract.write.createApplication([app]);
+            await expect(contract.write.createApplication([app])).to.be.rejectedWith(
+                "Address already used for another application"
+            );
+        });
 		it("Should emit the ApplicationCreated event with the new application's details", async () => {
 			const applicationId = await contract.read.getNextApplicationId();
 			const txHash = await contract.write.createApplication([app]);
@@ -88,16 +98,74 @@ describe("ApplicationManager", () => {
 			expect(event.args.id).to.be.equal(applicationId);
 			expect(event.args.application).to.contain(app);
 		});
-		
-        it("Should revert if the account address is already used", async () => {
-            await contract.write.createApplication([app]);
-            await expect(contract.write.createApplication([app])).to.be.rejectedWith(
-                "Address already used for another application"
-            );
-        });
 	});
 
 	describe("updateApplication", () => {
+		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		let contract: any;
+		let app: Application;
+		let applicationId: string;
+		let account= generateRandomAddress() as Address;
+
+		beforeEach(async () => {
+			const fixture = await loadFixture(deploy);
+			contract = fixture.contract;
+
+			app = {
+				name: "app",
+				account,
+			};
+
+			applicationId = await contract.read.getNextApplicationId();
+			await contract.write.createApplication([app]);
+		});
+
+		it("Should accept Application and id as inputs", async () => {
+			expect(await contract.write.updateApplication([applicationId, app])).to.be
+				.string;
+		});
+		it("Should update the application in the applications mapping with the provided applicationId to have the application data", async () => {
+			await contract.write.updateApplication([
+				applicationId,
+				{ account: app.account, name: "new app name" },
+			]);
+			expect(await contract.read.getApplication([applicationId])).to.contain({
+				account: app.account,
+				name: "new app name",
+			});
+		});
+		it("Should revert if the account address is already used", async () => {
+			const t1 = await contract.read.getNextApplicationId();
+			expect(t1).to.equal(parseUnits("1", 0));
+			await contract.write.createApplication([{		
+				account: generateRandomAddress() as Address,
+				name: "new app"
+			}]);
+
+			await expect(contract.write.updateApplication([t1, app])).to.be.rejectedWith(
+                "Address already used for another application"
+            );
+        });
+        it("Should revert if the application does not exist", async () => {
+			await expect(contract.write.updateApplication(["1", app])).to.be.rejectedWith(
+                "Application does not exist"
+            );
+        });
+
+		it("Should emit the ApplicationUpdated event with the updated application's details", async () => {
+			const txHash = await contract.write.updateApplication([applicationId, app]);
+			const events = await contract.getEvents.ApplicationUpdated();
+			expect(events.length).to.be.equal(1);
+
+			const event = events[0];
+			expect(event.eventName).to.be.equal("ApplicationUpdated");
+			expect(event.transactionHash).to.be.equal(txHash);
+			expect(event.args.id).to.be.equal(applicationId);
+			expect(event.args.application).to.contain(app);
+		});
+	});
+
+	describe("deleteApplication", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		let contract: any;
 		let app: Application;
@@ -117,36 +185,32 @@ describe("ApplicationManager", () => {
 			await contract.write.createApplication([app]);
 		});
 
-		it("Should accept Application as inputs", async () => {
-			expect(await contract.write.updateApplication([applicationId, app])).to.be
+		it("Should accept id as input", async () => {
+			expect(await contract.write.deleteApplication([applicationId])).to.be
 				.string;
 		});
-		it("Should update the Application struct in the applications mapping with the provided applicationId to have the application data", async () => {
-			await contract.write.updateApplication([
-				applicationId,
-				{ account: app.account, name: "new app name" },
-			]);
-			expect(await contract.read.getApplication([applicationId])).to.contain({
-				account: app.account,
-				name: "new app name",
-			});
+		it("Should delete the application from the applications mapping with the provided applicationId", async () => {
+			await contract.write.deleteApplication([applicationId]);
+            await expect(contract.read.getApplication([applicationId])).to.be.rejectedWith("Application does not exist");
 		});
-		it("Should revert if the account address is already used", async () => {
-			const t1 = await contract.read.getNextApplicationId();
-			expect(t1).to.equal(parseUnits("1", 0));
-			await contract.write.createApplication([{		
-				account: privateKeyToAccount(generatePrivateKey()).address,
-				name: "new app"
-			}]);
-
-			await expect(contract.write.updateApplication([t1, app])).to.be.rejectedWith(
-                "Address already used for another application"
-            );
-        });
         it("Should revert if the application does not exist", async () => {
-			await expect(contract.write.updateApplication(["1", app])).to.be.rejectedWith(
+			const nonExistentId = parseUnits("999", 0);
+            await expect(contract.write.deleteApplication([nonExistentId])).to.be.rejectedWith(
                 "Application does not exist"
             );
         });
+
+		it("Should emit the ApplicationDeleted event with the deleted application's details", async () => {
+			const txHash = await contract.write.deleteApplication([applicationId]);
+
+            const events = await contract.getEvents.ApplicationDeleted();
+            expect(events.length).to.be.equal(1);
+
+			const event = events[0];
+			expect(event.eventName).to.be.equal("ApplicationDeleted");
+			expect(event.transactionHash).to.be.equal(txHash);
+			expect(event.args.id).to.be.equal(applicationId);
+			expect(event.args.application).to.contain(app);
+		});
 	});
 });

@@ -34,6 +34,10 @@ contract ApplicationManager is IApplicationManager {
     }
 
     function deleteApplication(uint id) external override {
+        require(applicationExists(id), "Application does not exist");
+        addressUsed[applications[id].account] = false;
+        emit ApplicationDeleted(id, applications[id]);
+        delete applications[id];
     }
 
     function getApplication(uint id) external view override returns (Application memory) {
