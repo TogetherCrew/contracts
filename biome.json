@@ -10,6 +10,12 @@
 		}
 	},
 	"files": {
-		"ignore": ["./typechain-types", "./artifacts", "./cache", "./node_modules"]
+		"ignore": [
+			"./typechain-types",
+			"./artifacts",
+			"./cache",
+			"./node_modules",
+			"./coverage"
+		]
 	}
 }
