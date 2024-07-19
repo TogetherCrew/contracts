@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.25;
+pragma solidity 0.8.26;
 
 interface IApplicationManager {
     struct Application {
@@ -11,23 +11,10 @@ interface IApplicationManager {
     event ApplicationUpdated(uint id, Application application);
     event ApplicationDeleted(uint id, Application application);
 
-    function nextApplicationId() external view returns (uint);
-
-    function createApplication(Application memory _application) external;
-
-    function updateApplication(
-        uint _id,
-        Application memory _application
-    ) external;
-
-    function deleteApplication(uint _id) external;
-
-    function getApplication(
-        uint _id
-    ) external view returns (Application memory);
-
-    function getApplications(
-        uint _start,
-        uint _limit
-    ) external returns (Application[] memory application);
+    function getNextApplicationId() external view returns (uint);
+    function createApplication(Application memory application) external;
+    function updateApplication(uint id, Application memory application) external;
+    function deleteApplication(uint id) external;
+    function getApplication(uint id) external view returns (Application memory);
+    function getApplications(uint start, uint limit) external returns (Application[] memory);
 }

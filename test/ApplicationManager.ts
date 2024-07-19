@@ -33,7 +33,7 @@ describe("ApplicationManager", () => {
 	describe("Deployment", () => {
 		it("Should set the nextxApplicationId to 0", async () => {
 			const { contract } = await loadFixture(deploy);
-			expect(await contract.read.nextApplicationId()).to.equal(
+			expect(await contract.read.getNextApplicationId()).to.equal(
 				parseUnits("0", 0),
 			);
 		});
@@ -58,21 +58,21 @@ describe("ApplicationManager", () => {
 			expect(await contract.write.createApplication([app])).to.be.string;
 		});
 		it("Should increment nextApplicationId", async () => {
-			const t0 = await contract.read.nextApplicationId();
+			const t0 = await contract.read.getNextApplicationId();
 			expect(t0).to.equal(parseUnits("0", 0));
 			await contract.write.createApplication([app]);
-			const t1 = await contract.read.nextApplicationId();
+			const t1 = await contract.read.getNextApplicationId();
 			expect(t1).to.equal(parseUnits("1", 0));
 		});
 		it("Should create a new Application", async () => {
-			const applicationId = await contract.read.nextApplicationId();
+			const applicationId = await contract.read.getNextApplicationId();
 			await contract.write.createApplication([app]);
 			expect(await contract.read.getApplication([applicationId])).to.contain(
 				app,
 			);
 		});
 		it("Should emit the ApplicationCreated event with the new application's details", async () => {
-			const applicationId = await contract.read.nextApplicationId();
+			const applicationId = await contract.read.getNextApplicationId();
 			const txHash = await contract.write.createApplication([app]);
 
 			const events = await contract.getEvents.ApplicationCreated();
