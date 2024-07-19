@@ -64,11 +64,11 @@ describe("ApplicationManager", () => {
 			expect(await contract.write.createApplication([app])).to.be.string;
 		});
 		it("Should increment nextApplicationId", async () => {
-			const t0 = await contract.read.getNextApplicationId();
-			expect(t0).to.equal(parseUnits("0", 0));
+			const applicationId0 = await contract.read.getNextApplicationId();
+			expect(applicationId0).to.equal(parseUnits("0", 0));
 			await contract.write.createApplication([app]);
-			const t1 = await contract.read.getNextApplicationId();
-			expect(t1).to.equal(parseUnits("1", 0));
+			const applicationId1 = await contract.read.getNextApplicationId();
+			expect(applicationId1).to.equal(parseUnits("1", 0));
 		});
 		it("Should create a new Application", async () => {
 			const applicationId = await contract.read.getNextApplicationId();
@@ -103,7 +103,6 @@ describe("ApplicationManager", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		let contract: any;
 		let app: Application;
-		let applicationId: string;
 		const account = generateRandomAddress() as Address;
 
 		beforeEach(async () => {
@@ -115,15 +114,16 @@ describe("ApplicationManager", () => {
 				account,
 			};
 
-			applicationId = await contract.read.getNextApplicationId();
 			await contract.write.createApplication([app]);
 		});
 
 		it("Should accept Application and id as inputs", async () => {
+			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
 			expect(await contract.write.updateApplication([applicationId, app])).to.be
 				.string;
 		});
 		it("Should update the application in the applications mapping with the provided applicationId to have the application data", async () => {
+			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
 			await contract.write.updateApplication([
 				applicationId,
 				{ account: app.account, name: "new app name" },
@@ -134,8 +134,8 @@ describe("ApplicationManager", () => {
 			});
 		});
 		it("Should revert if the account address is already used", async () => {
-			const t1 = await contract.read.getNextApplicationId();
-			expect(t1).to.equal(parseUnits("1", 0));
+			const applicationId1 = await contract.read.getNextApplicationId();
+			expect(applicationId1).to.equal(parseUnits("1", 0));
 			await contract.write.createApplication([
 				{
 					account: generateRandomAddress() as Address,
@@ -144,7 +144,7 @@ describe("ApplicationManager", () => {
 			]);
 
 			await expect(
-				contract.write.updateApplication([t1, app]),
+				contract.write.updateApplication([applicationId1, app]),
 			).to.be.rejectedWith("Address already used for another application");
 		});
 		it("Should revert if the application does not exist", async () => {
@@ -155,6 +155,7 @@ describe("ApplicationManager", () => {
 		});
 
 		it("Should emit the ApplicationUpdated event with the updated application's details", async () => {
+			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
 			const txHash = await contract.write.updateApplication([
 				applicationId,
 				app,
@@ -174,7 +175,6 @@ describe("ApplicationManager", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		let contract: any;
 		let app: Application;
-		let applicationId: string;
 		const account = privateKeyToAccount(generatePrivateKey()).address;
 
 		beforeEach(async () => {
@@ -186,15 +186,16 @@ describe("ApplicationManager", () => {
 				account,
 			};
 
-			applicationId = await contract.read.getNextApplicationId();
 			await contract.write.createApplication([app]);
 		});
 
 		it("Should accept id as input", async () => {
+			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
 			expect(await contract.write.deleteApplication([applicationId])).to.be
 				.string;
 		});
 		it("Should delete the application from the applications mapping with the provided applicationId", async () => {
+			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
 			await contract.write.deleteApplication([applicationId]);
 			await expect(
 				contract.read.getApplication([applicationId]),
@@ -208,6 +209,7 @@ describe("ApplicationManager", () => {
 		});
 
 		it("Should emit the ApplicationDeleted event with the deleted application's details", async () => {
+			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
 			const txHash = await contract.write.deleteApplication([applicationId]);
 
 			const events = await contract.getEvents.ApplicationDeleted();
@@ -225,7 +227,6 @@ describe("ApplicationManager", () => {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		let contract: any;
 		let app: Application;
-		let applicationId: string;
 		const account = privateKeyToAccount(generatePrivateKey()).address;
 
 		beforeEach(async () => {
@@ -237,14 +238,15 @@ describe("ApplicationManager", () => {
 				account,
 			};
 
-			applicationId = await contract.read.getNextApplicationId();
 			await contract.write.createApplication([app]);
 		});
 
 		it("Should accept id as input", async () => {
+			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
 			expect(await contract.write.getApplication([applicationId])).to.be.string;
 		});
 		it("Should return the application from the applications mapping with the provided applicationId", async () => {
+			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
 			expect(await contract.read.getApplication([applicationId])).to.contains(
 				app,
 			);
