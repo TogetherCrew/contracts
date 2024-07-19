@@ -1,0 +1,5 @@
+yarn clean
+yarn compile
+yarn check
+yarn test
+yarn ci
