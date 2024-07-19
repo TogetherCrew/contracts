@@ -147,7 +147,8 @@ describe("ApplicationManager", () => {
             );
         });
         it("Should revert if the application does not exist", async () => {
-			await expect(contract.write.updateApplication(["1", app])).to.be.rejectedWith(
+			const nonExistentId = parseUnits("999", 0);
+			await expect(contract.write.updateApplication([nonExistentId, app])).to.be.rejectedWith(
                 "Application does not exist"
             );
         });
@@ -212,5 +213,41 @@ describe("ApplicationManager", () => {
 			expect(event.args.id).to.be.equal(applicationId);
 			expect(event.args.application).to.contain(app);
 		});
+	});
+
+
+	describe("getApplication", () => {
+		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		let contract: any;
+		let app: Application;
+		let applicationId: string;
+		let account= privateKeyToAccount(generatePrivateKey()).address
+
+		beforeEach(async () => {
+			const fixture = await loadFixture(deploy);
+			contract = fixture.contract;
+
+			app = {
+				name: "app",
+				account,
+			};
+
+			applicationId = await contract.read.getNextApplicationId();
+			await contract.write.createApplication([app]);
+		});
+
+		it("Should accept id as input", async () => {
+			expect(await contract.write.getApplication([applicationId])).to.be
+				.string;
+		});
+		it("Should return the application from the applications mapping with the provided applicationId", async () => {
+             expect(await contract.read.getApplication([applicationId])).to.contains(app);
+		});
+        it("Should revert if the application does not exist", async () => {
+			const nonExistentId = parseUnits("999", 0);
+            await expect( contract.read.getApplication([nonExistentId])).to.be.rejectedWith(
+                "Application does not exist"
+            );
+        });
 	});
 });
