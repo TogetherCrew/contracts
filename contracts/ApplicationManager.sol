@@ -13,39 +13,56 @@ contract ApplicationManager is IApplicationManager {
     function applicationExists(uint id) internal view returns (bool) {
         return applications[id].account != address(0);
     }
-    function getNextApplicationId() external view  returns (uint) {
+    function getNextApplicationId() external view returns (uint) {
         return nextApplicationId;
     }
 
-    function createApplication(Application memory application) external  {
-        require(!addressUsed[application.account], "Address already used for another application");
-        applications[nextApplicationId] = application;
-        addressUsed[application.account] = true;
-        emit ApplicationCreated(nextApplicationId, applications[nextApplicationId]);
+    function createApplication(Application memory newApplication) external {
+        require(
+            !addressUsed[newApplication.account],
+            "Address already used for another application"
+        );
+        applications[nextApplicationId] = newApplication;
+        addressUsed[newApplication.account] = true;
+        emit ApplicationCreated(
+            nextApplicationId,
+            applications[nextApplicationId]
+        );
         nextApplicationId++;
     }
 
-    function updateApplication(uint id, Application memory application) external  {
+    function updateApplication(
+        uint id,
+        Application memory updatedApplication
+    ) external {
         require(applicationExists(id), "Application does not exist");
-        require(!addressUsed[application.account] || applications[id].account == application.account,
-            "Address already used for another application");
-        applications[id] = application;
+        require(
+            !addressUsed[updatedApplication.account] ||
+                applications[id].account == updatedApplication.account,
+            "Address already used for another application"
+        );
+        applications[id] = updatedApplication;
         emit ApplicationUpdated(id, applications[id]);
     }
 
-    function deleteApplication(uint id) external  {
+    function deleteApplication(uint id) external {
         require(applicationExists(id), "Application does not exist");
         addressUsed[applications[id].account] = false;
         emit ApplicationDeleted(id, applications[id]);
         delete applications[id];
     }
 
-    function getApplication(uint id) external view  returns (Application memory) {
+    function getApplication(
+        uint id
+    ) external view returns (Application memory) {
         require(applicationExists(id), "Application does not exist");
         return applications[id];
     }
 
-    function getApplications(uint start, uint limit) external view returns (Application[] memory) {
+    function getApplications(
+        uint start,
+        uint limit
+    ) external view returns (Application[] memory) {
         Application[] memory result = new Application[](limit);
         uint count = 0;
         uint index = start;
@@ -57,7 +74,11 @@ contract ApplicationManager is IApplicationManager {
             index++;
         }
 
-        assembly { mstore(result, count) }
+        Application[] memory finalResult = new Application[](count);
+        for (uint i = 0; i < count; i++) {
+            finalResult[i] = result[i];
+        }
+        return finalResult;
 
         return result;
     }
