@@ -118,12 +118,14 @@ describe("ApplicationManager", () => {
 		});
 
 		it("Should accept Application and id as inputs", async () => {
-			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
+			const applicationId =
+				(await contract.read.getNextApplicationId()) - parseUnits("1", 0);
 			expect(await contract.write.updateApplication([applicationId, app])).to.be
 				.string;
 		});
 		it("Should update the application in the applications mapping with the provided applicationId to have the application data", async () => {
-			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
+			const applicationId =
+				(await contract.read.getNextApplicationId()) - parseUnits("1", 0);
 			await contract.write.updateApplication([
 				applicationId,
 				{ account: app.account, name: "new app name" },
@@ -155,7 +157,8 @@ describe("ApplicationManager", () => {
 		});
 
 		it("Should emit the ApplicationUpdated event with the updated application's details", async () => {
-			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
+			const applicationId =
+				(await contract.read.getNextApplicationId()) - parseUnits("1", 0);
 			const txHash = await contract.write.updateApplication([
 				applicationId,
 				app,
@@ -190,12 +193,14 @@ describe("ApplicationManager", () => {
 		});
 
 		it("Should accept id as input", async () => {
-			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
+			const applicationId =
+				(await contract.read.getNextApplicationId()) - parseUnits("1", 0);
 			expect(await contract.write.deleteApplication([applicationId])).to.be
 				.string;
 		});
 		it("Should delete the application from the applications mapping with the provided applicationId", async () => {
-			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
+			const applicationId =
+				(await contract.read.getNextApplicationId()) - parseUnits("1", 0);
 			await contract.write.deleteApplication([applicationId]);
 			await expect(
 				contract.read.getApplication([applicationId]),
@@ -209,7 +214,8 @@ describe("ApplicationManager", () => {
 		});
 
 		it("Should emit the ApplicationDeleted event with the deleted application's details", async () => {
-			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
+			const applicationId =
+				(await contract.read.getNextApplicationId()) - parseUnits("1", 0);
 			const txHash = await contract.write.deleteApplication([applicationId]);
 
 			const events = await contract.getEvents.ApplicationDeleted();
@@ -242,11 +248,13 @@ describe("ApplicationManager", () => {
 		});
 
 		it("Should accept id as input", async () => {
-			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
+			const applicationId =
+				(await contract.read.getNextApplicationId()) - parseUnits("1", 0);
 			expect(await contract.write.getApplication([applicationId])).to.be.string;
 		});
 		it("Should return the application from the applications mapping with the provided applicationId", async () => {
-			const applicationId = await contract.read.getNextApplicationId()- parseUnits("1", 0);
+			const applicationId =
+				(await contract.read.getNextApplicationId()) - parseUnits("1", 0);
 			expect(await contract.read.getApplication([applicationId])).to.contains(
 				app,
 			);
@@ -328,22 +336,27 @@ describe("ApplicationManager", () => {
 	});
 
 	describe("getNextApplicationId", () => {
-        let contract: any;
+		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		let contract: any;
 
-        beforeEach(async () => {
-            const fixture = await loadFixture(deploy);
-            contract = fixture.contract;
-        });
+		beforeEach(async () => {
+			const fixture = await loadFixture(deploy);
+			contract = fixture.contract;
+		});
 
-        it("Should return the next application ID", async () => {
-            expect(await contract.read.getNextApplicationId()).to.equal(parseUnits("0", 0));
+		it("Should return the next application ID", async () => {
+			expect(await contract.read.getNextApplicationId()).to.equal(
+				parseUnits("0", 0),
+			);
 
-            const app = {
-                name: "app",
-                account: generateRandomAddress() as Address,
-            };
-            await contract.write.createApplication([app]);
-            expect(await contract.read.getNextApplicationId()).to.equal(parseUnits("1", 0));
-        });
-    });
+			const app = {
+				name: "app",
+				account: generateRandomAddress() as Address,
+			};
+			await contract.write.createApplication([app]);
+			expect(await contract.read.getNextApplicationId()).to.equal(
+				parseUnits("1", 0),
+			);
+		});
+	});
 });
