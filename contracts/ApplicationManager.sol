@@ -13,6 +13,7 @@ contract ApplicationManager is IApplicationManager {
     function applicationExists(uint id) internal view returns (bool) {
         return applications[id].account != address(0);
     }
+
     function getNextApplicationId() external view returns (uint) {
         return nextApplicationId;
     }
@@ -79,7 +80,5 @@ contract ApplicationManager is IApplicationManager {
             finalResult[i] = result[i];
         }
         return finalResult;
-
-        return result;
     }
 }

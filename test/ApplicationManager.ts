@@ -321,8 +321,8 @@ describe("ApplicationManager", () => {
 
 		it("Should return no applications if all within range are deleted", async () => {
 			await contract.write.deleteApplication([parseUnits("0", 0)]);
-			await contract.write.deleteApplication([parseUnits("2", 0)]);
 			await contract.write.deleteApplication([parseUnits("1", 0)]);
+			await contract.write.deleteApplication([parseUnits("2", 0)]);
 			await contract.write.deleteApplication([parseUnits("3", 0)]);
 			await contract.write.deleteApplication([parseUnits("4", 0)]);
 			await contract.write.deleteApplication([parseUnits("5", 0)]);
