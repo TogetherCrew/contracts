@@ -26,7 +26,7 @@ contract ApplicationManager is
 
     function createApplication(
         Application memory newApplication
-    ) external restricted nonReentrant {
+    ) external nonReentrant restricted {
         require(
             !addressUsed[newApplication.account],
             "Address already used for another application"
@@ -43,7 +43,7 @@ contract ApplicationManager is
     function updateApplication(
         uint id,
         Application memory updatedApplication
-    ) external restricted nonReentrant {
+    ) external nonReentrant restricted {
         require(applicationExists(id), "Application does not exist");
         require(
             !addressUsed[updatedApplication.account] ||
@@ -54,7 +54,7 @@ contract ApplicationManager is
         emit ApplicationUpdated(id, applications[id]);
     }
 
-    function deleteApplication(uint id) external restricted nonReentrant {
+    function deleteApplication(uint id) external nonReentrant restricted {
         require(applicationExists(id), "Application does not exist");
         addressUsed[applications[id].account] = false;
         emit ApplicationDeleted(id, applications[id]);
