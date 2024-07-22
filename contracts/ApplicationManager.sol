@@ -54,7 +54,7 @@ contract ApplicationManager is
         emit ApplicationUpdated(id, applications[id]);
     }
 
-    function deleteApplication(uint id) external restricted {
+    function deleteApplication(uint id) external restricted nonReentrant {
         require(applicationExists(id), "Application does not exist");
         addressUsed[applications[id].account] = false;
         emit ApplicationDeleted(id, applications[id]);
