@@ -2,13 +2,14 @@
 pragma solidity 0.8.26;
 
 import {IApplicationManager} from "./IApplicationManager.sol";
+import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManaged.sol";
 
-contract ApplicationManager is IApplicationManager {
+contract ApplicationManager is IApplicationManager, AccessManaged {
     mapping(uint => Application) private applications;
     mapping(address => bool) private addressUsed;
     uint private nextApplicationId;
 
-    constructor() {}
+    constructor(address initialAuthority) AccessManaged(initialAuthority) {}
 
     function applicationExists(uint id) internal view returns (bool) {
         return applications[id].account != address(0);
@@ -18,7 +19,9 @@ contract ApplicationManager is IApplicationManager {
         return nextApplicationId;
     }
 
-    function createApplication(Application memory newApplication) external {
+    function createApplication(
+        Application memory newApplication
+    ) external restricted {
         require(
             !addressUsed[newApplication.account],
             "Address already used for another application"
@@ -35,18 +38,18 @@ contract ApplicationManager is IApplicationManager {
     function updateApplication(
         uint id,
         Application memory updatedApplication
-    ) external {
+    ) external restricted {
         require(applicationExists(id), "Application does not exist");
         require(
             !addressUsed[updatedApplication.account] ||
                 applications[id].account == updatedApplication.account,
-            "Address already used for another application"
+            "Account used by another application"
         );
         applications[id] = updatedApplication;
         emit ApplicationUpdated(id, applications[id]);
     }
 
-    function deleteApplication(uint id) external {
+    function deleteApplication(uint id) external restricted {
         require(applicationExists(id), "Application does not exist");
         addressUsed[applications[id].account] = false;
         emit ApplicationDeleted(id, applications[id]);
