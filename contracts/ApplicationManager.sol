@@ -3,8 +3,13 @@ pragma solidity 0.8.26;
 
 import {IApplicationManager} from "./IApplicationManager.sol";
 import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManaged.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract ApplicationManager is IApplicationManager, AccessManaged {
+contract ApplicationManager is
+    IApplicationManager,
+    AccessManaged,
+    ReentrancyGuard
+{
     mapping(uint => Application) private applications;
     mapping(address => bool) private addressUsed;
     uint private nextApplicationId;
@@ -21,7 +26,7 @@ contract ApplicationManager is IApplicationManager, AccessManaged {
 
     function createApplication(
         Application memory newApplication
-    ) external restricted {
+    ) external restricted nonReentrant {
         require(
             !addressUsed[newApplication.account],
             "Address already used for another application"
@@ -38,7 +43,7 @@ contract ApplicationManager is IApplicationManager, AccessManaged {
     function updateApplication(
         uint id,
         Application memory updatedApplication
-    ) external restricted {
+    ) external restricted nonReentrant {
         require(applicationExists(id), "Application does not exist");
         require(
             !addressUsed[updatedApplication.account] ||
