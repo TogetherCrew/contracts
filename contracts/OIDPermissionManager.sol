@@ -3,8 +3,6 @@ pragma solidity 0.8.26;
 
 import {IOIDPermissionManager} from "./IOIDPermissionManager.sol";
 
-import "hardhat/console.sol";
-
 contract OIDPermissionManager is IOIDPermissionManager {
     mapping(string => mapping(address => bool)) private permissions;
 

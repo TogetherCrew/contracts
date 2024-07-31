@@ -1,30 +1,30 @@
+import {
+	type Attestation,
+	type AttestationRequest,
+	EAS,
+	NO_EXPIRATION,
+	SchemaEncoder,
+	SchemaRegistry,
+	ZERO_BYTES32,
+} from "@ethereum-attestation-service/eas-sdk";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
+import { BrowserProvider, JsonRpcSigner } from "ethers";
 import hre from "hardhat";
 import {
 	type Account,
 	type Address,
 	type Chain,
 	type Client,
+	type Transport,
+	type TypedDataDomain,
 	decodeAbiParameters,
 	encodeAbiParameters,
 	getAddress,
 	parseSignature,
-	type Transport,
-	type TypedDataDomain,
 	zeroHash,
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import {
-	type Attestation,
-	EAS,
-	SchemaEncoder,
-	SchemaRegistry,
-	type AttestationRequest,
-	ZERO_BYTES32,
-	NO_EXPIRATION,
-} from "@ethereum-attestation-service/eas-sdk";
-import { BrowserProvider, JsonRpcSigner } from "ethers";
 
 const ATTESTER_ROLE = 1n;
 
