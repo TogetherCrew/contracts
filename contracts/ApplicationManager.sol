@@ -25,32 +25,39 @@ contract ApplicationManager is
     }
 
     function createApplication(
-        Application memory newApplication
+        ApplicationDto memory dto
     ) external nonReentrant restricted {
         require(
-            !addressUsed[newApplication.account],
+            !addressUsed[dto.account],
             "Address already used for another application"
         );
-        applications[nextApplicationId] = newApplication;
-        addressUsed[newApplication.account] = true;
-        emit ApplicationCreated(
-            nextApplicationId,
-            applications[nextApplicationId]
-        );
+        uint id = nextApplicationId;
         nextApplicationId++;
+        Application memory newApplication = Application({
+            id: id,
+            name: dto.name,
+            account: dto.account
+        });
+        applications[id] = newApplication;
+        addressUsed[newApplication.account] = true;
+        emit ApplicationCreated(id, applications[id]);
     }
 
     function updateApplication(
         uint id,
-        Application memory updatedApplication
+        ApplicationDto memory dto
     ) external nonReentrant restricted {
         require(applicationExists(id), "Application does not exist");
         require(
-            !addressUsed[updatedApplication.account] ||
-                applications[id].account == updatedApplication.account,
+            !addressUsed[dto.account] ||
+                applications[id].account == dto.account,
             "Account used by another application"
         );
-        applications[id] = updatedApplication;
+        applications[id] = Application({
+            id: id,
+            name: dto.name,
+            account: dto.account
+        });
         emit ApplicationUpdated(id, applications[id]);
     }
 

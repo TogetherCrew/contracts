@@ -11,6 +11,7 @@ import {
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 interface Application {
+	id?: bigint;
 	name: string;
 	account: Address;
 }
@@ -139,7 +140,7 @@ describe("ApplicationManager", () => {
 					});
 					expect(
 						await contract.read.getApplication([applicationId]),
-					).to.contain(app);
+					).to.contain({ ...app, id: applicationId });
 				});
 				it("Should emit the ApplicationCreated event with the new application's details", async () => {
 					const applicationId = await contract.read.getNextApplicationId();
@@ -191,6 +192,7 @@ describe("ApplicationManager", () => {
 					expect(
 						await contract.read.getApplication([applicationId]),
 					).to.contain({
+						id: applicationId,
 						account: app.account,
 						name: newName,
 					});
@@ -345,7 +347,7 @@ describe("ApplicationManager", () => {
 						account: generateRandomAddress(),
 					};
 					await contract.write.createApplication([app]);
-					apps.push(app);
+					apps.push({ ...app, id: parseUnits(`${i}`, 0) });
 				}
 			});
 
