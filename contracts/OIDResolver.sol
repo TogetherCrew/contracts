@@ -47,7 +47,7 @@ contract OIDResolver is SchemaResolver, AccessManagedUpgradeable {
     }
 
     function _checkAttester(address attester) internal virtual {
-        (bool isMember, ) = IAccessManager(authority()).hasRole(1, attester);
+        (bool isMember, ) = IAccessManager(authority()).hasRole(2, attester);
         if (!isMember) {
             revert UnauthorizedAttester(attester);
         }

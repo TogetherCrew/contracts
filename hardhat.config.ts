@@ -1,6 +1,9 @@
-import type { HardhatUserConfig } from "hardhat/config";
+import { type HardhatUserConfig, vars } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomiclabs/hardhat-solhint";
+
+const PRIVATE_KEY = vars.get("PRIVATE_KEY");
+const ETHERSCAN_API_KEY = vars.get("ETHERSCAN_API_KEY");
 
 const config: HardhatUserConfig = {
 	solidity: {
@@ -10,6 +13,17 @@ const config: HardhatUserConfig = {
 				enabled: true,
 				runs: 1000,
 			},
+		},
+	},
+	networks: {
+		sepolia: {
+			accounts: [PRIVATE_KEY],
+			url: "https://ethereum-sepolia-rpc.publicnode.com",
+		},
+	},
+	etherscan: {
+		apiKey: {
+			sepolia: ETHERSCAN_API_KEY,
 		},
 	},
 };
