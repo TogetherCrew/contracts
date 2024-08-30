@@ -6,6 +6,7 @@ import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManage
 import {IEAS} from "@ethereum-attestation-service/eas-contracts/contracts/IEAS.sol";
 import {Attestation} from "@ethereum-attestation-service/eas-contracts/contracts/Common.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import {OIDAccessManager} from "./OIDAccessManager.sol";
 
 contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
     error UnauthorizedAccess(address caller);
@@ -64,7 +65,11 @@ contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
     }
 
     function _isPermissionManager() internal view returns (bool) {
-        (bool isMember, ) = IAccessManager(authority()).hasRole(3, msg.sender);
+        OIDAccessManager access = OIDAccessManager(authority());
+        (bool isMember, ) = access.hasRole(
+            access.PERMISSION_MANAGER_ROLE(),
+            msg.sender
+        );
         return isMember;
     }
 

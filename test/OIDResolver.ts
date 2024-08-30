@@ -24,29 +24,10 @@ import {
 	parseSignature,
 	zeroHash,
 } from "viem";
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-
-const ATTESTER_ROLE = 1n;
-
-const schema = "uint256 id";
-
-function generateRandomAddress(): Address {
-	const randomKey = generatePrivateKey();
-	const account = privateKeyToAccount(randomKey);
-	return account.address;
-}
-
-function clientToSigner(client: Client<Transport, Chain, Account>) {
-	const { account, chain, transport } = client;
-	const network = {
-		chainId: chain.id,
-		name: chain.name,
-		ensAddress: chain.contracts?.ensRegistry?.address,
-	};
-	const provider = new BrowserProvider(transport, network);
-	const signer = new JsonRpcSigner(provider, account.address);
-	return signer;
-}
+import { clientToSigner } from "../utils/clientToSigner";
+import { SIMPLE_SCHEMA } from "../utils/constants";
+import { deployAccessManager } from "../utils/deployAccessManager";
+import { deployEAS, deploySchema } from "../utils/deployEAS";
 
 describe("OIDResolver", () => {
 	// We define a fixture to reuse the same setup in every test.
@@ -57,41 +38,36 @@ describe("OIDResolver", () => {
 		const [deployer, attester, otherAccount] =
 			await hre.viem.getWalletClients();
 
-		const registry = await hre.viem.deployContract("SchemaRegistry");
+		const { eas, registry } = await deployEAS(deployer);
 
-		const eas = await hre.viem.deployContract("EAS", [registry.address]);
+		const authority = await deployAccessManager(deployer);
+		const ATTESTATION_MANAGER_ROLE =
+			await authority.read.ATTESTATION_MANAGER_ROLE();
 
-		const access = await hre.viem.deployContract("OIDAccessManager");
-		await access.write.initialize();
-
-		await access.write.grantRole([ATTESTER_ROLE, attester.account.address, 0]);
+		await authority.write.grantRole([
+			ATTESTATION_MANAGER_ROLE,
+			attester.account.address,
+			0,
+		]);
 
 		const resolver = await hre.viem.deployContract("OIDResolver", [
 			eas.address,
 		]);
-
-		await resolver.write.initialize([access.address]);
+		await resolver.write.initialize([authority.address]);
 
 		const publicClient = await hre.viem.getPublicClient();
 
-		// Need to mix in ethers
-		const signer = clientToSigner(deployer);
-		const schemaRegistry = new SchemaRegistry(registry.address);
-		schemaRegistry.connect(signer);
-		const tx = await schemaRegistry.register({
-			schema,
-			resolverAddress: resolver.address,
-			revocable: true,
-		});
-		await tx.wait();
-
-		const events = await registry.getEvents.Registered();
-		const schemaUID = events[0].args.uid as Address;
+		const schemaUID = await deploySchema(
+			deployer,
+			registry.address,
+			SIMPLE_SCHEMA,
+			resolver.address,
+		);
 
 		return {
 			registry,
 			eas,
-			access,
+			authority,
 			resolver,
 			deployer,
 			attester,
@@ -109,9 +85,11 @@ describe("OIDResolver", () => {
 	});
 
 	describe("Initialize", () => {
-		it("Should set AccessManager", async () => {
-			const { access, resolver } = await loadFixture(deploy);
-			expect(await resolver.read.authority()).to.eq(getAddress(access.address));
+		it("Should set authority", async () => {
+			const { authority, resolver } = await loadFixture(deploy);
+			expect(await resolver.read.authority()).to.eq(
+				getAddress(authority.address),
+			);
 		});
 	});
 
