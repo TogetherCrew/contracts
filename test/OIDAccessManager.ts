@@ -30,5 +30,17 @@ describe("OIDAccessManager", () => {
 				await contract.read.hasRole([ADMIN_ROLE, deployer.account.address]),
 			).to.deep.eq([true, 0]);
 		});
+		it("Should have APPLICATION_MANAGER_ROLE", async () => {
+			const { contract, deployer } = await loadFixture(deploy);
+			expect(await contract.read.APPLICATION_MANAGER_ROLE()).to.eq(1n);
+		});
+		it("Should have ATTESTATION_MANAGER_ROLE", async () => {
+			const { contract, deployer } = await loadFixture(deploy);
+			expect(await contract.read.ATTESTATION_MANAGER_ROLE()).to.eq(2n);
+		});
+		it("Should have PERMISSION_MANAGER_ROLE", async () => {
+			const { contract, deployer } = await loadFixture(deploy);
+			expect(await contract.read.PERMISSION_MANAGER_ROLE()).to.eq(3n);
+		});
 	});
 });
