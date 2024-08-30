@@ -1,8 +1,11 @@
 import { type HardhatUserConfig, vars } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomiclabs/hardhat-solhint";
+import { generatePrivateKey } from "viem/accounts";
 
-const PRIVATE_KEY = vars.has("PRIVATE_KEY") ? vars.get("PRIVATE_KEY") : "";
+const PRIVATE_KEY = vars.has("PRIVATE_KEY")
+	? vars.get("PRIVATE_KEY")
+	: generatePrivateKey();
 const ETHERSCAN_API_KEY = vars.has("ETHERSCAN_API_KEY")
 	? vars.get("ETHERSCAN_API_KEY")
 	: "";
