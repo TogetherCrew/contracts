@@ -6,7 +6,7 @@ import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {IEAS} from "@ethereum-attestation-service/eas-contracts/contracts/IEAS.sol";
 import {Attestation} from "@ethereum-attestation-service/eas-contracts/contracts/Common.sol";
 import {SchemaResolver} from "@ethereum-attestation-service/eas-contracts/contracts/resolver/SchemaResolver.sol";
-import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import {OIDAccessManager} from "./OIDAccessManager.sol";
 
 contract OIDResolver is SchemaResolver, AccessManagedUpgradeable {
     error UnauthorizedAttester(address attester);
@@ -47,7 +47,11 @@ contract OIDResolver is SchemaResolver, AccessManagedUpgradeable {
     }
 
     function _checkAttester(address attester) internal virtual {
-        (bool isMember, ) = IAccessManager(authority()).hasRole(2, attester);
+        OIDAccessManager authority = OIDAccessManager(authority());
+        (bool isMember, ) = authority.hasRole(
+            authority.ATTESTATION_MANAGER_ROLE(),
+            attester
+        );
         if (!isMember) {
             revert UnauthorizedAttester(attester);
         }

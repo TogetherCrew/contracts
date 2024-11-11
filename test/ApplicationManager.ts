@@ -9,14 +9,13 @@ import {
 	toFunctionSelector,
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { deployAccessManager } from "../utils/deployAccessManager";
 
 interface Application {
 	id?: bigint;
 	name: string;
 	account: Address;
 }
-
-const MANAGER_ROLE = 1n;
 
 const CREATE_APPLICATION_SELECTOR = toFunctionSelector(
 	"createApplication((string, address))",
@@ -42,13 +41,23 @@ describe("ApplicationManager", () => {
 		// Contracts are deployed using the first signer/account by default
 		const [deployer, manager, otherAccount] = await hre.viem.getWalletClients();
 
-		const access = await hre.viem.deployContract("OIDAccessManager");
-		await access.write.initialize();
+		const access = await deployAccessManager(deployer);
 
-		await access.write.grantRole([MANAGER_ROLE, manager.account.address, 0]);
+		const APPLICATION_MANAGER_ROLE =
+			await access.read.APPLICATION_MANAGER_ROLE();
 
-		// Assign deployer to MANAGER_ROLE for simplicity
-		await access.write.grantRole([MANAGER_ROLE, deployer.account.address, 0]);
+		await access.write.grantRole([
+			APPLICATION_MANAGER_ROLE,
+			manager.account.address,
+			0,
+		]);
+
+		// Assign deployer to APPLICATION_MANAGER_ROLE for simplicity
+		await access.write.grantRole([
+			APPLICATION_MANAGER_ROLE,
+			deployer.account.address,
+			0,
+		]);
 
 		const contract = await hre.viem.deployContract("ApplicationManager", [
 			access.address,
@@ -61,7 +70,7 @@ describe("ApplicationManager", () => {
 				UPDATE_APPLICATION_SELECTOR,
 				DELETE_APPLICATION_SELECTOR,
 			],
-			MANAGER_ROLE,
+			APPLICATION_MANAGER_ROLE,
 		]);
 
 		const publicClient = await hre.viem.getPublicClient();
@@ -73,6 +82,7 @@ describe("ApplicationManager", () => {
 			manager,
 			otherAccount,
 			publicClient,
+			APPLICATION_MANAGER_ROLE,
 		};
 	}
 

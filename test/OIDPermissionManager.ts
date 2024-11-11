@@ -20,10 +20,8 @@ import {
 } from "viem";
 import { clientToSigner } from "../utils/clientToSigner";
 import { SIMPLE_SCHEMA } from "../utils/constants";
-import { ROLES } from "../utils/roles";
-
-const { ID: PERMISSION_MANAGER_ROLE_ID, LABEL: PERMISSION_MANAGER_ROLE_LABEL } =
-	ROLES.PERMISSION_MANAGER;
+import { deployAccessManager } from "../utils/deployAccessManager";
+import { deployEAS, deploySchema } from "../utils/deployEAS";
 
 describe("OIDPermissionManager", () => {
 	async function attest(
@@ -54,27 +52,6 @@ describe("OIDPermissionManager", () => {
 		return { attestationUID };
 	}
 
-	async function deployEAS(deployer: Client<Transport, Chain, Account>) {
-		const registry = await hre.viem.deployContract("SchemaRegistry");
-		const eas = await hre.viem.deployContract("EAS", [registry.address]);
-
-		// Need to mix in ethers
-		const signer = clientToSigner(deployer);
-		const schemaRegistry = new SchemaRegistry(registry.address);
-		schemaRegistry.connect(signer);
-		const tx = await schemaRegistry.register({ schema: SIMPLE_SCHEMA });
-		await tx.wait();
-
-		const events = await registry.getEvents.Registered();
-		const schemaUID = events[0].args.uid as Address;
-
-		return {
-			registry,
-			eas,
-			schemaUID,
-		};
-	}
-
 	// We define a fixture to reuse the same setup in every test.
 	// We use loadFixture to run this setup once, snapshot that state,
 	// and reset Hardhat Network to that snapshot in every test.
@@ -84,7 +61,12 @@ describe("OIDPermissionManager", () => {
 			await hre.viem.getWalletClients();
 
 		// EAS Deployment
-		const { registry, eas, schemaUID } = await deployEAS(deployer);
+		const { registry, eas } = await deployEAS(deployer);
+		const schemaUID = await deploySchema(
+			deployer,
+			registry.address,
+			SIMPLE_SCHEMA,
+		);
 		const { attestationUID } = await attest(
 			attester,
 			recipient.account.address,
@@ -94,21 +76,12 @@ describe("OIDPermissionManager", () => {
 			[{ name: "id", value: 1, type: "uint256" }],
 		);
 
-		const access = await hre.viem.deployContract("OIDAccessManager");
-		await access.write.initialize();
-		await access.write.labelRole([
-			PERMISSION_MANAGER_ROLE_ID,
-			PERMISSION_MANAGER_ROLE_LABEL,
-		]);
-		await access.write.grantRole([
-			PERMISSION_MANAGER_ROLE_ID,
-			manager.account.address,
-			0,
-		]);
+		const access = await deployAccessManager(deployer);
+		const PERMISSION_MANAGER_ROLE = await access.read.PERMISSION_MANAGER_ROLE();
 
 		// Assign manager to PERMISSION_MANAGER_ROLE
 		await access.write.grantRole([
-			PERMISSION_MANAGER_ROLE_ID,
+			PERMISSION_MANAGER_ROLE,
 			manager.account.address,
 			0,
 		]);
