@@ -215,6 +215,49 @@ describe("OIDPermissionManager", () => {
 				expect(event.args.granted).to.be.true;
 			});
 		});
+
+		it("Should revert with AttestationNotFound", async () => {
+			const { contract, recipient, application } = await loadFixture(deploy);
+			const invalidAttestationUID =
+				"0x0000000000000000000000000000000000000000000000000000000000000000";
+
+			await expect(
+				contract.write.grantPermission(
+					[invalidAttestationUID, application.account.address],
+					{ account: recipient.account },
+				),
+			).to.be.rejectedWith(`AttestationNotFound("${invalidAttestationUID}")`);
+		});
+
+		it("Should revert with AttestationRevoked", async () => {
+			const {
+				contract,
+				recipient,
+				attestationUID,
+				application,
+				eas,
+				schemaUID,
+				attester,
+			} = await loadFixture(deploy);
+
+			// Revoke the attestation
+			const e = new EAS(eas.address);
+			const signer = clientToSigner(attester);
+			e.connect(signer);
+
+			const tx = await e.revoke({
+				schema: schemaUID,
+				data: { uid: attestationUID },
+			});
+			await tx.wait();
+
+			await expect(
+				contract.write.grantPermission(
+					[attestationUID, application.account.address],
+					{ account: recipient.account },
+				),
+			).to.be.rejectedWith(`AttestationRevoked("${attestationUID}")`);
+		});
 	});
 
 	describe("Revoke Permission", () => {
@@ -298,6 +341,47 @@ describe("OIDPermissionManager", () => {
 				expect(event.args.granted).to.be.false;
 			});
 		});
+		it("Should revert with AttestationNotFound", async () => {
+			const { contract, recipient, application } = await loadFixture(deploy);
+			const invalidAttestationUID =
+				"0x0000000000000000000000000000000000000000000000000000000000000000";
+
+			await expect(
+				contract.write.revokePermission(
+					[invalidAttestationUID, application.account.address],
+					{ account: recipient.account },
+				),
+			).to.be.rejectedWith(`AttestationNotFound("${invalidAttestationUID}")`);
+		});
+		it("Should revert with AttestationRevoked", async () => {
+			const {
+				contract,
+				recipient,
+				attestationUID,
+				application,
+				eas,
+				schemaUID,
+				attester,
+			} = await loadFixture(deploy);
+
+			// Revoke the attestation
+			const e = new EAS(eas.address);
+			const signer = clientToSigner(attester);
+			e.connect(signer);
+
+			const tx = await e.revoke({
+				schema: schemaUID,
+				data: { uid: attestationUID },
+			});
+			await tx.wait();
+
+			await expect(
+				contract.write.revokePermission(
+					[attestationUID, application.account.address],
+					{ account: recipient.account },
+				),
+			).to.be.rejectedWith(`AttestationRevoked("${attestationUID}")`);
+		});
 	});
 
 	describe("Has Permission", () => {
@@ -327,43 +411,41 @@ describe("OIDPermissionManager", () => {
 			});
 		});
 
-		describe("Attestation Revoked", () => {
-			it("Should return false", async () => {
-				const {
-					contract,
-					attestationUID,
-					recipient,
-					application,
-					eas,
-					schemaUID,
-					attester,
-					key,
-				} = await loadFixture(deploy);
+		it("Should revert with AttestationRevoked", async () => {
+			const {
+				contract,
+				attestationUID,
+				recipient,
+				application,
+				eas,
+				schemaUID,
+				attester,
+				key,
+			} = await loadFixture(deploy);
 
-				await contract.write.grantPermission(
-					[attestationUID, application.account.address],
-					{ account: recipient.account },
-				);
+			await contract.write.grantPermission(
+				[attestationUID, application.account.address],
+				{ account: recipient.account },
+			);
 
-				expect(
-					await contract.read.hasPermission([key, application.account.address]),
-				).to.be.true;
+			expect(
+				await contract.read.hasPermission([key, application.account.address]),
+			).to.be.true;
 
-				const e = new EAS(eas.address);
-				const signer = clientToSigner(attester);
-				e.connect(signer);
+			const e = new EAS(eas.address);
+			const signer = clientToSigner(attester);
+			e.connect(signer);
 
-				const tx = await e.revoke({
-					schema: schemaUID,
-					data: { uid: attestationUID },
-				});
-				await tx.wait();
-
-				// After revocation, the permission should be removed
-				expect(
-					await contract.read.hasPermission([key, application.account.address]),
-				).to.be.false;
+			const tx = await e.revoke({
+				schema: schemaUID,
+				data: { uid: attestationUID },
 			});
+			await tx.wait();
+
+			// After revocation, the permission should be removed
+			expect(
+				await contract.read.hasPermission([key, application.account.address]),
+			).to.be.false;
 		});
 	});
 });

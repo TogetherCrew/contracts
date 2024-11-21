@@ -9,6 +9,8 @@ import {OIDAccessManager} from "./OIDAccessManager.sol";
 
 contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
     error UnauthorizedAccess(address caller);
+    error AttestationNotFound(bytes32 attestation_uid);
+    error AttestationRevoked(bytes32 attestation_uid);
 
     struct Permission {
         bool granted;
@@ -16,7 +18,6 @@ contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
     }
     IEAS internal immutable _eas;
 
-    // mapping(bytes32 => mapping(address => bool)) private permissions;
     mapping(bytes32 => mapping(address => Permission)) private permissions;
 
     constructor(
@@ -28,48 +29,42 @@ contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
 
 
     function grantPermission(bytes32 attestation_uid, address account) external {
-        Attestation memory attestation = _eas.getAttestation(attestation_uid);
-        _checkValid(attestation);
-        bytes32 key =decodePayload(attestation.data);
-        permissions[key][account] = Permission({
-            granted: true,
-         attestation_uid: attestation_uid
-        });
-        // permissions[key][account] = true;
-        emit PermissionUpdated(key, account, true);
+        _updatePermission(attestation_uid, account, true);
     }
 
 
     function revokePermission(bytes32 attestation_uid, address account) external override {
-        Attestation memory attestation = _eas.getAttestation(attestation_uid);
-        _checkValid(attestation);
-        bytes32 key = decodePayload(attestation.data); // add test case
-        permissions[key][account] = Permission({
-            granted: false,
-            attestation_uid: attestation_uid
-        });
-        // permissions[key][account] = false;
-        emit PermissionUpdated(key, account, false);
+        _updatePermission(attestation_uid, account, false);
     }
-
+    
     function hasPermission(bytes32 key,address account) external view override returns (bool) {
-        // TODO: check null permissions -> reutrn null + test case
-        Attestation memory attestation = _eas.getAttestation(permissions[key][account].attestation_uid);
-
-        if (attestation.revocationTime == 0) {
-            return permissions[key][account].granted;
-        } else {
+        Permission storage permission = permissions[key][account];
+        if (!_permissionExists(permission) || !permission.granted) {
             return false;
         }
-
+        Attestation memory attestation = _getAttestation(permission.attestation_uid);
+        if (_isAttestationRevoked(attestation)) {
+            return false;
+        }   
+        return true;
     }
 
-    function _checkValid(Attestation memory attestation) internal view {
-        bool valid = _isAttestationRecipient(attestation) || _isPermissionManager();
 
-        if (!valid) {
-            revert UnauthorizedAccess(msg.sender);
-        }
+    function _updatePermission(bytes32 attestation_uid, address account, bool granted) internal {
+        Attestation memory attestation = _getAttestation(attestation_uid);
+        if (_isAttestationRevoked(attestation)) {
+            revert AttestationRevoked(attestation_uid);
+        }   
+        _checkAuthorization(attestation);
+        bytes32 key = _decodeAttestationKey(attestation);
+        _setPermission(key, account, granted, attestation_uid);
+        emit PermissionUpdated(key, account, granted);
+    }
+
+    function _checkAuthorization(Attestation memory attestation) internal view {
+      if (!_isAttestationRecipient(attestation) && !_isPermissionManager()) {
+          revert UnauthorizedAccess(msg.sender);
+      }
     }
 
 
@@ -82,19 +77,47 @@ contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
         return isMember;
     }
 
+
+    function _permissionExists(Permission storage permission) internal view returns (bool) {
+        return permission.attestation_uid != bytes32(0);
+    }
+
+    function _setPermission(
+    bytes32 key,
+    address account,
+    bool granted,
+    bytes32 attestation_uid
+    ) internal {
+         permissions[key][account] = Permission({
+        granted: granted,
+        attestation_uid: attestation_uid
+    });
+    }
+
+    function _getAttestation(bytes32 attestation_uid) private view returns (Attestation memory) {
+        Attestation memory attestation = _eas.getAttestation(attestation_uid);
+         if (attestation.uid == bytes32(0)) {
+            revert AttestationNotFound(attestation_uid);
+         }
+         return attestation;  
+    }
+
     function _isAttestationRecipient(Attestation memory attestation) internal view returns (bool) {
         return attestation.recipient == msg.sender;
     }
 
-     function decodePayload(bytes memory payload) internal pure returns (bytes32) {
-        // change the function name + test case 
-        // (bytes32 key, string memory provider, string memory secret) = abi.decode(payload, (bytes32, string, string));
-        bytes32 key = abi.decode(payload, (bytes32));
-        return key;
+    function _isAttestationRevoked(Attestation memory attestation) internal pure returns (bool) {
+        return attestation.revocationTime != 0;
     }
 
     function eas() external view returns (IEAS) {
         return _eas;
+    }
+
+    
+    function _decodeAttestationKey(Attestation memory attestation) internal pure returns (bytes32) {
+        bytes32 key = abi.decode(attestation.data, (bytes32));
+        return key;
     }
 
 }
