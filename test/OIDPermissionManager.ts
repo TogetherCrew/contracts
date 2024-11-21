@@ -1,9 +1,9 @@
-// import {
-// 	EAS,
-// 	SchemaEncoder,
-// 	type SchemaItem,
-// 	SchemaRegistry,
-// } from "@ethereum-attestation-service/eas-sdk";
+import {
+	EAS,
+	SchemaEncoder,
+	type SchemaItem,
+	SchemaRegistry,
+} from "@ethereum-attestation-service/eas-sdk";
 import {
 	type Fixture,
 	loadFixture,
@@ -16,21 +16,77 @@ import {
 	type Chain,
 	type Client,
 	type Transport,
-	concat,
 	getAddress,
+	keccak256,
+	toHex,
 } from "viem";
-import { keccak256, toHex } from "viem";
+import { clientToSigner } from "../utils/clientToSigner";
 import { deployAccessManager } from "../utils/deployAccessManager";
+import { deployEAS, deploySchema } from "../utils/deployEAS";
 
 describe("OIDPermissionManager", () => {
-	// We define a fixture to reuse the same setup in every test.
-	// We use loadFixture to run this setup once, snapshot that state,
-	// and reset Hardhat Network to that snapshot in every test.
+	const SIMPLE_SCHEMA = "bytes32 key,string provider,string secret";
+	async function attest(
+		client: Client<Transport, Chain, Account>,
+		recipient: Address,
+		easAddress: Address,
+		schemaUID: Address,
+		schema: string,
+		key: `0x${string}`,
+		provider: string,
+		secret: string,
+	) {
+		const schemaEncoder = new SchemaEncoder(schema);
+		const data = [
+			{ name: "key", value: key, type: "bytes32" },
+			{ name: "provider", value: provider, type: "string" },
+			{ name: "secret", value: secret, type: "string" },
+		];
+		const encodedData = schemaEncoder.encodeData(data);
+
+		const eas = new EAS(easAddress);
+		const signer = clientToSigner(client);
+		eas.connect(signer);
+		const tx = await eas.attest({
+			schema: schemaUID,
+			data: {
+				recipient,
+				expirationTime: 0n,
+				revocable: true,
+				data: encodedData,
+			},
+		});
+		const attestationUID = (await tx.wait()) as Address;
+
+		return { attestationUID, key };
+	}
+
 	async function deploy() {
-		const [deployer, manager, application, otherAccount] =
+		const [deployer, manager, attester, recipient, application, otherAccount] =
 			await hre.viem.getWalletClients();
 
-		const key = keccak256(toHex("id".concat("providers", "metadata")));
+		// EAS Deployment
+		const { registry, eas } = await deployEAS(deployer);
+		const schemaUID = await deploySchema(
+			deployer,
+			registry.address,
+			SIMPLE_SCHEMA,
+		);
+
+		const key = keccak256(toHex("id".concat("provider", "metadata")));
+		const provider = "ProviderName";
+		const secret = "SecretValue";
+
+		const { attestationUID } = await attest(
+			attester,
+			recipient.account.address,
+			eas.address,
+			schemaUID,
+			SIMPLE_SCHEMA,
+			key,
+			provider,
+			secret,
+		);
 
 		const access = await deployAccessManager(deployer);
 		const PERMISSION_MANAGER_ROLE = await access.read.PERMISSION_MANAGER_ROLE();
@@ -44,16 +100,25 @@ describe("OIDPermissionManager", () => {
 
 		const contract = await hre.viem.deployContract("OIDPermissionManager", [
 			access.address,
-			// eas.address,
+			eas.address,
 		]);
+
 		return {
 			contract,
 			access,
 			deployer,
 			manager,
-			application,
 			otherAccount,
+			eas,
+			registry,
+			schemaUID,
+			recipient,
+			application,
+			attestationUID,
+			attester,
 			key,
+			provider,
+			secret,
 		};
 	}
 
@@ -64,12 +129,16 @@ describe("OIDPermissionManager", () => {
 				getAddress(access.address),
 			);
 		});
+		it("Should set the eas", async () => {
+			const { contract, eas } = await loadFixture(deploy);
+			expect(await contract.read.eas()).to.equal(getAddress(eas.address));
+		});
 	});
 
 	describe("Grant Permission", () => {
 		describe("Recipient", () => {
 			it("Should update permission", async () => {
-				const { contract, manager, key, application } =
+				const { contract, recipient, attestationUID, application, key } =
 					await loadFixture(deploy);
 
 				expect(
@@ -77,8 +146,8 @@ describe("OIDPermissionManager", () => {
 				).to.be.false;
 
 				await contract.write.grantPermission(
-					[key, application.account.address],
-					{ account: manager.account },
+					[attestationUID, application.account.address],
+					{ account: recipient.account },
 				);
 
 				expect(
@@ -89,7 +158,7 @@ describe("OIDPermissionManager", () => {
 
 		describe("Manager", () => {
 			it("Should update permission", async () => {
-				const { contract, manager, key, application } =
+				const { contract, manager, attestationUID, application, key } =
 					await loadFixture(deploy);
 
 				expect(
@@ -97,7 +166,7 @@ describe("OIDPermissionManager", () => {
 				).to.be.false;
 
 				await contract.write.grantPermission(
-					[key, application.account.address],
+					[attestationUID, application.account.address],
 					{ account: manager.account },
 				);
 
@@ -109,13 +178,14 @@ describe("OIDPermissionManager", () => {
 
 		describe("Other", () => {
 			it("Should revert with UnauthorizedAccess", async () => {
-				const { contract, key, application, otherAccount } =
+				const { contract, attestationUID, application, otherAccount } =
 					await loadFixture(deploy);
 
 				await expect(
-					contract.write.grantPermission([key, application.account.address], {
-						account: otherAccount.account,
-					}),
+					contract.write.grantPermission(
+						[attestationUID, application.account.address],
+						{ account: otherAccount.account },
+					),
 				).to.be.rejectedWith(
 					`UnauthorizedAccess("${getAddress(otherAccount.account.address)}")`,
 				);
@@ -124,11 +194,11 @@ describe("OIDPermissionManager", () => {
 
 		describe("Event", () => {
 			it("Should emit PermissionUpdated event", async () => {
-				const { manager, contract, key, application } =
+				const { contract, recipient, attestationUID, application, key } =
 					await loadFixture(deploy);
 				const txHash = await contract.write.grantPermission(
-					[key, application.account.address],
-					{ account: manager.account },
+					[attestationUID, application.account.address],
+					{ account: recipient.account },
 				);
 
 				const events = await contract.getEvents.PermissionUpdated();
@@ -152,22 +222,21 @@ describe("OIDPermissionManager", () => {
 
 		beforeEach(async () => {
 			fixture = await loadFixture(deploy);
-			const { manager, application, key, contract } = fixture;
-			await contract.write.grantPermission([key, application.account.address], {
-				account: manager.account,
-			});
-			expect(
-				await contract.read.hasPermission([key, application.account.address]),
-			).to.be.true;
+			const { attestationUID, application, recipient, contract } = fixture;
+			await contract.write.grantPermission(
+				[attestationUID, application.account.address],
+				{ account: recipient.account },
+			);
 		});
 
 		describe("Recipient", () => {
-			it("Should revoke attestation", async () => {
-				const { manager, application, key, contract } = fixture;
+			it("Should revoke permission", async () => {
+				const { attestationUID, application, recipient, contract, key } =
+					fixture;
 
 				await contract.write.revokePermission(
-					[key, application.account.address],
-					{ account: manager.account },
+					[attestationUID, application.account.address],
+					{ account: recipient.account },
 				);
 
 				expect(
@@ -177,11 +246,11 @@ describe("OIDPermissionManager", () => {
 		});
 
 		describe("Manager", () => {
-			it("Should revoke attestation", async () => {
-				const { manager, application, key, contract } = fixture;
+			it("Should revoke permission", async () => {
+				const { attestationUID, application, manager, contract, key } = fixture;
 
 				await contract.write.revokePermission(
-					[key, application.account.address],
+					[attestationUID, application.account.address],
 					{ account: manager.account },
 				);
 
@@ -193,12 +262,13 @@ describe("OIDPermissionManager", () => {
 
 		describe("Other", () => {
 			it("Should revert with UnauthorizedAccess", async () => {
-				const { contract, key, application, otherAccount } = fixture;
+				const { contract, attestationUID, application, otherAccount } = fixture;
 
 				await expect(
-					contract.write.revokePermission([key, application.account.address], {
-						account: otherAccount.account,
-					}),
+					contract.write.revokePermission(
+						[attestationUID, application.account.address],
+						{ account: otherAccount.account },
+					),
 				).to.be.rejectedWith(
 					`UnauthorizedAccess("${getAddress(otherAccount.account.address)}")`,
 				);
@@ -207,10 +277,11 @@ describe("OIDPermissionManager", () => {
 
 		describe("Event", () => {
 			it("Should emit PermissionUpdated event", async () => {
-				const { contract, manager, key, application } = fixture;
+				const { contract, recipient, attestationUID, application, key } =
+					fixture;
 				const txHash = await contract.write.revokePermission(
-					[key, application.account.address],
-					{ account: manager.account },
+					[attestationUID, application.account.address],
+					{ account: recipient.account },
 				);
 
 				const events = await contract.getEvents.PermissionUpdated();
@@ -230,23 +301,65 @@ describe("OIDPermissionManager", () => {
 	});
 
 	describe("Has Permission", () => {
-		describe("Attestation is valid", () => {
+		describe("Permission Granted", () => {
 			it("Should return true", async () => {
-				const { contract, manager, key, application } =
+				const { contract, recipient, attestationUID, application, key } =
 					await loadFixture(deploy);
 
 				await contract.write.grantPermission(
-					[key, application.account.address],
-					{ account: manager.account },
+					[attestationUID, application.account.address],
+					{ account: recipient.account },
 				);
 
 				expect(
 					await contract.read.hasPermission([key, application.account.address]),
 				).to.be.true;
 			});
-			it("Should return false", async () => {
-				const { contract, key, application } = await loadFixture(deploy);
+		});
 
+		describe("Permission Not Granted", () => {
+			it("Should return false", async () => {
+				const { contract, application, key } = await loadFixture(deploy);
+
+				expect(
+					await contract.read.hasPermission([key, application.account.address]),
+				).to.be.false;
+			});
+		});
+
+		describe("Attestation Revoked", () => {
+			it("Should return false", async () => {
+				const {
+					contract,
+					attestationUID,
+					recipient,
+					application,
+					eas,
+					schemaUID,
+					attester,
+					key,
+				} = await loadFixture(deploy);
+
+				await contract.write.grantPermission(
+					[attestationUID, application.account.address],
+					{ account: recipient.account },
+				);
+
+				expect(
+					await contract.read.hasPermission([key, application.account.address]),
+				).to.be.true;
+
+				const e = new EAS(eas.address);
+				const signer = clientToSigner(attester);
+				e.connect(signer);
+
+				const tx = await e.revoke({
+					schema: schemaUID,
+					data: { uid: attestationUID },
+				});
+				await tx.wait();
+
+				// After revocation, the permission should be removed
 				expect(
 					await contract.read.hasPermission([key, application.account.address]),
 				).to.be.false;
