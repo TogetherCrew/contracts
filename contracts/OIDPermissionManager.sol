@@ -6,7 +6,6 @@ import {IEAS} from "@ethereum-attestation-service/eas-contracts/contracts/IEAS.s
 import {Attestation} from "@ethereum-attestation-service/eas-contracts/contracts/Common.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {OIDAccessManager} from "./OIDAccessManager.sol";
-import "hardhat/console.sol";
 
 contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
     error UnauthorizedAccess(address caller);
@@ -32,7 +31,6 @@ contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
         Attestation memory attestation = _eas.getAttestation(attestation_uid);
         _checkValid(attestation);
         bytes32 key =decodePayload(attestation.data);
-        // console.logBytes32(key);
         permissions[key][account] = Permission({
             granted: true,
          attestation_uid: attestation_uid
