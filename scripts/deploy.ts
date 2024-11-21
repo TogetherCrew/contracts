@@ -4,15 +4,17 @@ import ApplicationManager from "../ignition/modules/ApplicationManagerModule";
 import OIDAccessManagerModule from "../ignition/modules/OIDAccessManagerModule";
 import OIDPermissionManager from "../ignition/modules/OIDPermissionManagerModule";
 import OIDResolver from "../ignition/modules/OIDResolverModule";
-
-const eas = "0xC2679fBD37d54388Ce493F1DB75320D236e1815e"; // Sepolia
+import {deployEAS} from '../utils/deployEAS';
+// const eas = "0xC2679fBD37d54388Ce493F1DB75320D236e1815e"; // Sepolia
 
 async function main() {
 	const [deployer] = await hre.viem.getWalletClients();
-
+	const easContract = await deployEAS(deployer);
+	const eas = easContract.eas.address
 	const { contract: authority } = await hre.ignition.deploy(
 		OIDAccessManagerModule,
 	);
+	
 	console.log(`AccessManager deployed to: ${authority.address}`);
 
 	const { contract: resolver } = await hre.ignition.deploy(OIDResolver, {

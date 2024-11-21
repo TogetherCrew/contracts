@@ -6,6 +6,7 @@ import {IEAS} from "@ethereum-attestation-service/eas-contracts/contracts/IEAS.s
 import {Attestation} from "@ethereum-attestation-service/eas-contracts/contracts/Common.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {OIDAccessManager} from "./OIDAccessManager.sol";
+import "hardhat/console.sol";
 
 contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
     error UnauthorizedAccess(address caller);
@@ -31,6 +32,7 @@ contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
         Attestation memory attestation = _eas.getAttestation(attestation_uid);
         _checkValid(attestation);
         bytes32 key =decodePayload(attestation.data);
+        // console.logBytes32(key);
         permissions[key][account] = Permission({
             granted: true,
          attestation_uid: attestation_uid
@@ -43,7 +45,7 @@ contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
     function revokePermission(bytes32 attestation_uid, address account) external override {
         Attestation memory attestation = _eas.getAttestation(attestation_uid);
         _checkValid(attestation);
-        bytes32 key = decodePayload(attestation.data);
+        bytes32 key = decodePayload(attestation.data); // add test case
         permissions[key][account] = Permission({
             granted: false,
             attestation_uid: attestation_uid
@@ -53,7 +55,7 @@ contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
     }
 
     function hasPermission(bytes32 key,address account) external view override returns (bool) {
-        // return permissions[key][account];
+        // TODO: check null permissions -> reutrn null + test case
         Attestation memory attestation = _eas.getAttestation(permissions[key][account].attestation_uid);
 
         if (attestation.revocationTime == 0) {
@@ -87,6 +89,7 @@ contract OIDPermissionManager is IOIDPermissionManager, AccessManaged {
     }
 
      function decodePayload(bytes memory payload) internal pure returns (bytes32) {
+        // change the function name + test case 
         // (bytes32 key, string memory provider, string memory secret) = abi.decode(payload, (bytes32, string, string));
         bytes32 key = abi.decode(payload, (bytes32));
         return key;
