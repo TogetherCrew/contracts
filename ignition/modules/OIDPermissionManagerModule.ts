@@ -1,8 +1,13 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 
 const OIDPermissionManager = buildModule("OIDPermissionManager", (m) => {
-	// const authority = m.getParameter("authority");
-	const contract = m.contract("OIDPermissionManager", [], {});
+	const initialAuthority = m.getParameter("initialAuthority");
+	const initialEAS = m.getParameter("initialEAS");
+	const contract = m.contract(
+		"OIDPermissionManager",
+		[initialAuthority, initialEAS],
+		{},
+	);
 	return { contract };
 });
 

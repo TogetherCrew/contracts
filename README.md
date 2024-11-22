@@ -24,3 +24,9 @@ npx hardhat ignition deploy ./ignition/modules/Lock.ts
 
 | Address | Tag | Chain |
 |---------|-----|-------|
+
+
+// Localhost
+RUNNING network -> npx hardhat node
+Remove ignition/deployments/chain-31337
+Deploy to localhost -> npx hardhat run ./scripts/deploy.ts --network localhost 
