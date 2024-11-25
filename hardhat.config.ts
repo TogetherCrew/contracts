@@ -9,7 +9,9 @@ const PRIVATE_KEY = vars.has("PRIVATE_KEY")
 const ETHERSCAN_API_KEY = vars.has("ETHERSCAN_API_KEY")
 	? vars.get("ETHERSCAN_API_KEY")
 	: "";
-
+const OPTIMISM_ETHERSCAN_API_KEY = vars.has("OPTIMISM_ETHERSCAN_API_KEY")
+	? vars.get("OPTIMISM_ETHERSCAN_API_KEY")
+	: "";
 const config: HardhatUserConfig = {
 	solidity: {
 		version: "0.8.26",
@@ -25,11 +27,30 @@ const config: HardhatUserConfig = {
 			accounts: [PRIVATE_KEY],
 			url: "https://ethereum-sepolia-rpc.publicnode.com",
 		},
+		optimismSepolia: {
+			chainId: 11155420,
+			accounts: [PRIVATE_KEY],
+			url: "https://sepolia.optimism.io",
+			gas: 33333,
+			gasPrice: 1500000,
+			gasMultiplier: 1.2,
+		},
 	},
 	etherscan: {
 		apiKey: {
 			sepolia: ETHERSCAN_API_KEY,
+			optimismSepolia: OPTIMISM_ETHERSCAN_API_KEY,
 		},
+		customChains: [
+			{
+				network: "optimismSepolia",
+				chainId: 11155420,
+				urls: {
+					apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
+					browserURL: "https://api-sepolia-optimistic.etherscan.io",
+				},
+			},
+		],
 	},
 };
 
