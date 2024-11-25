@@ -31,9 +31,8 @@ const config: HardhatUserConfig = {
 			chainId: 11155420,
 			accounts: [PRIVATE_KEY],
 			url: "https://sepolia.optimism.io",
-			gas: 33333,
-			gasPrice: 1500000,
-			gasMultiplier: 1.2,
+			gas: 55555,
+			gasMultiplier: 2,
 		},
 	},
 	etherscan: {
@@ -47,7 +46,7 @@ const config: HardhatUserConfig = {
 				chainId: 11155420,
 				urls: {
 					apiURL: "https://api-sepolia-optimistic.etherscan.io/api",
-					browserURL: "https://api-sepolia-optimistic.etherscan.io",
+					browserURL: "https://sepolia-optimistic.etherscan.io",
 				},
 			},
 		],

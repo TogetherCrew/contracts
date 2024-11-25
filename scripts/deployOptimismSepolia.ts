@@ -1,11 +1,18 @@
 import hre from "hardhat";
-import { toFunctionSelector } from "viem";
+import {
+	http,
+	type Address,
+	createPublicClient,
+	toFunctionSelector,
+} from "viem";
+import { optimismSepolia } from "viem/chains";
 import ApplicationManager from "../ignition/modules/ApplicationManagerModule";
 import OIDAccessManagerModule from "../ignition/modules/OIDAccessManagerModule";
 import OIDPermissionManager from "../ignition/modules/OIDPermissionManagerModule";
 import OIDResolver from "../ignition/modules/OIDResolverModule";
 import { deployEAS } from "../utils/deployEAS";
-const eas = "0x4200000000000000000000000000000000000021"; // Optimsim Sepolia
+
+const eas = "0x4200000000000000000000000000000000000021"; // Optimism Sepolia
 
 async function main() {
 	const appManagerWallet = "0x127d8ed45af416019db1d4a39ad44141a8ff56b2";
@@ -13,6 +20,13 @@ async function main() {
 	const permissionManagerWallet = "0x127d8ed45af416019db1d4a39ad44141a8ff56b2";
 
 	const [deployer] = await hre.viem.getWalletClients();
+
+	// Create the public client connected to Optimism Sepolia
+	const publicClient = createPublicClient({
+		chain: optimismSepolia,
+		transport: http("https://sepolia.optimism.io"),
+	});
+
 	// const easContract = await deployEAS(deployer);
 	// const eas = easContract.eas.address;
 	const { contract: authority } = await hre.ignition.deploy(
@@ -75,28 +89,44 @@ async function main() {
 	const ATTESTER_ROLE = await authority.read.ATTESTATION_MANAGER_ROLE();
 	const PERMISSION_ROLE = await authority.read.PERMISSION_MANAGER_ROLE();
 
-	console.log("APP_MANAGER_ROLE", APP_MANAGER_ROLE, typeof APP_MANAGER_ROLE);
-	console.log("ATTESTER_ROLE", ATTESTER_ROLE, typeof ATTESTER_ROLE);
-	console.log("PERMISSION_ROLE", PERMISSION_ROLE, typeof PERMISSION_ROLE);
+	let txHash: Address;
 
-	await authority.write.labelRole([APP_MANAGER_ROLE, "APP_MANAGER_ROLE"]);
+	txHash = await authority.write.labelRole([
+		APP_MANAGER_ROLE,
+		"APP_MANAGER_ROLE",
+	]);
+	await publicClient.waitForTransactionReceipt({ hash: txHash });
 	console.log("Labeled APP_MANAGER_ROLE");
-	await authority.write.labelRole([ATTESTER_ROLE, "ATTESTER_ROLE"]);
+
+	txHash = await authority.write.labelRole([ATTESTER_ROLE, "ATTESTER_ROLE"]);
+	await publicClient.waitForTransactionReceipt({ hash: txHash });
 	console.log("Labeled ATTESTER_ROLE");
-	await authority.write.labelRole([PERMISSION_ROLE, "PERMISSION_ROLE"]);
+
+	txHash = await authority.write.labelRole([
+		PERMISSION_ROLE,
+		"PERMISSION_ROLE",
+	]);
+	await publicClient.waitForTransactionReceipt({ hash: txHash });
 	console.log("Labeled PERMISSION_ROLE");
 
-	await authority.write.grantRole([APP_MANAGER_ROLE, appManagerWallet, 0]);
+	txHash = await authority.write.grantRole([
+		APP_MANAGER_ROLE,
+		appManagerWallet,
+		0,
+	]);
+	await publicClient.waitForTransactionReceipt({ hash: txHash });
 	console.log(`Granted APP_MANAGER_ROLE to ${appManagerWallet}`);
 
-	await authority.write.grantRole([ATTESTER_ROLE, attesterWallet, 0]);
+	txHash = await authority.write.grantRole([ATTESTER_ROLE, attesterWallet, 0]);
+	await publicClient.waitForTransactionReceipt({ hash: txHash });
 	console.log(`Granted ATTESTER_ROLE to ${attesterWallet}`);
 
-	await authority.write.grantRole([
+	txHash = await authority.write.grantRole([
 		PERMISSION_ROLE,
 		permissionManagerWallet,
 		0,
 	]);
+	await publicClient.waitForTransactionReceipt({ hash: txHash });
 	console.log(`Granted PERMISSION_ROLE to ${permissionManagerWallet}`);
 
 	const selectors = [
@@ -105,11 +135,12 @@ async function main() {
 		toFunctionSelector("deleteApplication(uint256)"),
 	];
 
-	await authority.write.setTargetFunctionRole([
+	txHash = await authority.write.setTargetFunctionRole([
 		appManager.address,
 		selectors,
 		APP_MANAGER_ROLE,
 	]);
+	await publicClient.waitForTransactionReceipt({ hash: txHash });
 	console.log("Set target functions for app manager");
 }
 
