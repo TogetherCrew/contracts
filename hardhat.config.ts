@@ -12,6 +12,9 @@ const ETHERSCAN_API_KEY = vars.has("ETHERSCAN_API_KEY")
 const OPTIMISM_ETHERSCAN_API_KEY = vars.has("OPTIMISM_ETHERSCAN_API_KEY")
 	? vars.get("OPTIMISM_ETHERSCAN_API_KEY")
 	: "";
+const BASESCAN_API_KEY = vars.has("BASESCAN_API_KEY")
+	? vars.get("BASESCAN_API_KEY")
+	: "";
 const config: HardhatUserConfig = {
 	solidity: {
 		version: "0.8.26",
@@ -31,14 +34,20 @@ const config: HardhatUserConfig = {
 			chainId: 11155420,
 			accounts: [PRIVATE_KEY],
 			url: "https://sepolia.optimism.io",
-			gas: 55555,
-			gasMultiplier: 2,
+			gasMultiplier: 1.3,
+		},
+		baseSepolia: {
+			chainId: 84532,
+			accounts: [PRIVATE_KEY],
+			url: "https://sepolia.base.org",
+			gasMultiplier: 1.3,
 		},
 	},
 	etherscan: {
 		apiKey: {
 			sepolia: ETHERSCAN_API_KEY,
 			optimismSepolia: OPTIMISM_ETHERSCAN_API_KEY,
+			baseSepolia: BASESCAN_API_KEY,
 		},
 		customChains: [
 			{

@@ -1,6 +1,6 @@
 {
-  "OIDAccessManagerModule#OIDAccessManager": "0x73fCa92f947846E9829B3C553036A752b97dD4E7",
-  "OIDResolver#OIDResolver": "0x62dFb7640AFB5d8b4c2B4865CfE88020378B923a",
-  "ApplicationManager#ApplicationManager": "0xB7e1beD02cCd1DCdaf8FB48B807DcC5906353C30",
-  "OIDPermissionManager#OIDPermissionManager": "0xC0e1515277a7E812Eb481D765E365D54248e1e77"
+  "OIDAccessManagerModule#OIDAccessManager": "0x07d53fDeAb271f25648D4c1f600D267C87be608a",
+  "OIDResolver#OIDResolver": "0xf304B86273d2A1BB62Fbf1292481496b3cf04572",
+  "ApplicationManager#ApplicationManager": "0xb250C2b5967FEc8241FD9a26C30145Fbdf347eEC",
+  "OIDPermissionManager#OIDPermissionManager": "0xFcE488b93696Ec5e279b8257E67F074AbFEc59d8"
 }
