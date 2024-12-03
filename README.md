@@ -21,6 +21,24 @@ npx hardhat ignition deploy ./ignition/modules/Lock.ts
 | 0x127D8ed45aF416019dB1D4a39Ad44141A8FF56b2 | TogetherCrew Manager     |
 | 0xc2539c70de7b24b9124e4e897083ccc72e83c7c7 | TogetherCrew Attester    |
 
+| Address                                                            | Contract Network   |
+| ------------------------------------------------------------------ | ------------------ | ---------------- |
+| 0x1991D39FAF168EC48BaF10bbec8A8b6751BfC1E2                         | AccessManager      | Arbitrum         |
+| 0x4B015ed3A1C7244544e00aC947077593D6789F74                         | OIDResolver        | Arbitrum         |
+| 0x8006cCF2b3240bB716c86E5a16A9dD9b32eC5c53                         | ApplicationManager | Arbitrum         |
+| 0x9a85Bb58CFb60ABd205c4Af7039fF73C86b41bd8                         | PermissionManager  | Arbitrum         |
+| 0x6b5b50f2de8b387664838bd3c751e21f6b9aac7cf4bf5b2fb86e760b89a8a22d | Eas Schema         | Arbitrum         |
+| 0x8194157B9464683E552c810b4FEA66251435606b                         | AccessManager      | Optimism Sepolia |
+| 0x79558DE98808e053442f34A8834cd1f645561CE4                         | OIDResolver        | Optimism Sepolia |
+| 0xF65e300B0e622B1Bc224c7351397ea2FF29f1c3D                         | ApplicationManager | Optimism Sepolia |
+| 0x52d0a71B42Dd84532A7B332fdfa059E8a7391092                         | PermissionManager  | Optimism Sepolia |
+| 0xe8c59f8de4cdf61c8ebefa3ed83d714acc767dda3bbff00623e73f5a8bf5255f | Eas Schema         | Optimism Sepolia |
+| 0x07d53fDeAb271f25648D4c1f600D267C87be608a                         | AccessManager      | Base Sepolia     |
+| 0xf304B86273d2A1BB62Fbf1292481496b3cf04572                         | OIDResolver        | Base Sepolia     |
+| 0xb250C2b5967FEc8241FD9a26C30145Fbdf347eEC                         | ApplicationManager | Base Sepolia     |
+| 0xFcE488b93696Ec5e279b8257E67F074AbFEc59d8                         | PermissionManager  | Base Sepolia     |
+| 0x2c988095892ea57c600e5cc6fb62531502bc0c8d038ac39dc3fab161b6f122db | Eas Schema         | Base Sepolia     |
+
 ## Deployments
 
 Before deploying, ensure that previous deployment files are removed to prevent conflicts:

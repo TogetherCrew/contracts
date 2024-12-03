@@ -44,10 +44,10 @@ const config: HardhatUserConfig = {
 			accounts: [PRIVATE_KEY],
 			url: "https://sepolia.base.org",
 		},
-		arbitrumone: {
+		arbitrum: {
 			chainId: 42161,
 			accounts: [PRIVATE_KEY],
-			url: "https://arbiscan.io",
+			url: "https://arb1.arbitrum.io/rpc",
 		},
 	},
 	etherscan: {
@@ -55,7 +55,7 @@ const config: HardhatUserConfig = {
 			sepolia: ETHERSCAN_API_KEY,
 			optimismSepolia: OPTIMISM_ETHERSCAN_API_KEY,
 			baseSepolia: BASESCAN_API_KEY,
-			arbitrumone: ARBISCAN_API_KEY,
+			arbitrumOne: ARBISCAN_API_KEY,
 		},
 		customChains: [
 			{
