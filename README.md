@@ -21,7 +21,7 @@ npx hardhat ignition deploy ./ignition/modules/Lock.ts
 | 0x127D8ed45aF416019dB1D4a39Ad44141A8FF56b2 | TogetherCrew Manager     |
 | 0xc2539c70de7b24b9124e4e897083ccc72e83c7c7 | TogetherCrew Attester    |
 
-| Address                                                            | Contract Network   |
+| Address                                                            | Contract           | Network          |
 | ------------------------------------------------------------------ | ------------------ | ---------------- |
 | 0x1991D39FAF168EC48BaF10bbec8A8b6751BfC1E2                         | AccessManager      | Arbitrum         |
 | 0x4B015ed3A1C7244544e00aC947077593D6789F74                         | OIDResolver        | Arbitrum         |
