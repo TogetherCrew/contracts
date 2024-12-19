@@ -20,6 +20,7 @@ npx hardhat ignition deploy ./ignition/modules/Lock.ts
 | 0x1A486364AEB60Db41108799CfEfFc5dA98B40574 | TogetherCrew Application |
 | 0x127D8ed45aF416019dB1D4a39Ad44141A8FF56b2 | TogetherCrew Manager     |
 | 0xc2539c70de7b24b9124e4e897083ccc72e83c7c7 | TogetherCrew Attester    |
+| 0x9b228e34653f9E958853963aBFDDEC2E5A2D59Ec | TogetherCrew Production  |
 
 | Address                                                            | Contract           | Network          |
 | ------------------------------------------------------------------ | ------------------ | ---------------- |
